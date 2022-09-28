@@ -48,12 +48,42 @@ func (p *Products) ServeHTTP(rw http.ResponseWriter, r *http.Request) {
 		idString := g[0][1]
 		id, err := strconv.Atoi(idString)
 		if err != nil {
-			p.l.Println("Invalid URI unable to convert to numer", idString)
+			p.l.Println("Invalid URI unable to convert to number", idString)
 			http.Error(rw, "Invalid URI", http.StatusBadRequest)
 			return
 		}
 
 		p.updateProducts(id, rw, r)
+		return
+	}
+
+	if r.Method == http.MethodDelete {
+		p.l.Println("DELETE", r.URL.Path)
+		// expect the id in the URI
+		reg := regexp.MustCompile(`/([0-9]+)`)
+		g := reg.FindAllStringSubmatch(r.URL.Path, -1)
+
+		if len(g) != 1 {
+			p.l.Println("Invalid URI more than one id")
+			http.Error(rw, "Invalid URI", http.StatusBadRequest)
+			return
+		}
+
+		if len(g[0]) != 2 {
+			p.l.Println("Invalid URI more than one capture group")
+			http.Error(rw, "Invalid URI", http.StatusBadRequest)
+			return
+		}
+
+		idString := g[0][1]
+		id, err := strconv.Atoi(idString)
+		if err != nil {
+			p.l.Println("Invalid URI unable to convert to number", idString)
+			http.Error(rw, "Invalid URI", http.StatusBadRequest)
+			return
+		}
+
+		p.deleteProduct(id, rw, r)
 		return
 	}
 	//catch all
@@ -100,4 +130,10 @@ func (p *Products) updateProducts(id int, rw http.ResponseWriter, r *http.Reques
 		http.Error(rw, "Product not found", http.StatusInternalServerError)
 		return
 	}
+}
+
+func (p *Products) deleteProduct(id int, rw http.ResponseWriter, r *http.Request) {
+	p.l.Println("Handled DELETE request")
+
+	data.DeleteProduct(id)
 }
